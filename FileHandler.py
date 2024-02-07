@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 from collections import deque
+import DangerDetection
 
 def filehandler(filename, speed):
     # get file and frame data
@@ -37,7 +38,7 @@ def filehandler(filename, speed):
             dangerous[i] = buf_frame
 
         # Process the 'dangerous' array
-        dangerous_segments = process_dangerous(dangerous, frame_rate)
+        dangerous_segments = DangerDetection.process_dangerous(dangerous, frame_rate)
         if count % 14 == 0 and len(dangerous_segments) > 0:
             print(dangerous_segments)
         count += 1
