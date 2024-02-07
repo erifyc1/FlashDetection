@@ -35,5 +35,5 @@ def process_dangerous(dangerous, frame_rate):
                         # skip to next relevant frame
                         frame_idx = future_frame
                         num_flashes[row, col] += 1
-    
+    print(np.max(num_flashes))
     return num_flashes
