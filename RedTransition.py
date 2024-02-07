@@ -1,4 +1,5 @@
 from sortedcontainers import SortedDict
+import numpy as np
 
 class ChromaticityTree:
   def __init__(self):
