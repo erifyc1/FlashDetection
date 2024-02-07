@@ -36,4 +36,4 @@ def process_dangerous(dangerous, frame_rate):
                         frame_idx = future_frame
                         num_flashes[row, col] += 1
     
-    return np.max(num_flashes)
+    return num_flashes
