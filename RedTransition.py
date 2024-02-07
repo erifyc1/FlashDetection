@@ -55,7 +55,7 @@ class SRChecker:
   
   def remove_rp(self, element):
     if element >= self.MAX_RED_PERCENTAGE:
-      if element in self.rp:
+      if element in self.rp and self.rp[element] == 1:
         del self.rp[element]
       else:
         self.rp[element] -= 1
