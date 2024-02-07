@@ -11,6 +11,7 @@ def process_dangerous(dangerous, frame_rate):
     segment_height = height // 4
     segment_width = width // 4
     luminance_threshold = 10
+    num_flashes = np.zeros((4, 4))
 
     # Initialize luminance tracking and timestamps for each segment
     luminances = np.zeros((num_frames, 4, 4))
@@ -36,6 +37,7 @@ def process_dangerous(dangerous, frame_rate):
                         frame_idx = future_frame
                         timestamp = frame_idx / frame_rate
                         segment_changes[(row, col)].append(timestamp)
+                        num_flashes[row, col] += 1
 
     # Merge close timestamps to consider them as a single flashing incident
     for key in segment_changes:
@@ -52,4 +54,4 @@ def process_dangerous(dangerous, frame_rate):
             merged_timestamps.append((start, timestamps[-1]))
         segment_changes[key] = merged_timestamps
 
-    return segment_changes
+    return segment_changes, np.max(num_flashes)
