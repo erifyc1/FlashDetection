@@ -53,5 +53,5 @@ def process_dangerous(dangerous, frame_rate):
         if start is not None:
             merged_timestamps.append((start, timestamps[-1]))
         segment_changes[key] = merged_timestamps
-
-    return segment_changes, np.max(num_flashes)
+    print("flash count of highest area is" + str(np.max(num_flashes)))
+    return segment_changes

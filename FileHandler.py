@@ -19,34 +19,31 @@ def filehandler(filename, speed):
     dangerous = np.zeros((frames_per_second, frame_height, frame_width, 3), dtype=np.uint8)
     frame_buffer = deque(maxlen=frames_per_second)
 
-    frame = 0
     while cap.isOpened():
         count = 0
         ret, frame = cap.read()
         if not ret:
-            print("error")
-            return
-            # break
+            print("done")
+            break
+        # Convert from BGR to HLS
+        hls_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
 
-    # Convert from BGR to HLS
-    hls_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
+        # Add the current frame to the buffer
+        frame_buffer.append(hls_frame)
 
-    # Add the current frame to the buffer
-    frame_buffer.append(hls_frame)
+        # Check if we have enough frames for the sliding window
+        print(frame_buffer, frames_per_second)
+        if len(frame_buffer) == frames_per_second:
+            # Fill the 'dangerous' array with the frames from the buffer
+            for i, buf_frame in enumerate(frame_buffer):
+                dangerous[i] = buf_frame
 
-    # Check if we have enough frames for the sliding window
-    if len(frame_buffer) == frames_per_second:
-        # Fill the 'dangerous' array with the frames from the buffer
-        for i, buf_frame in enumerate(frame_buffer):
-            dangerous[i] = buf_frame
-
-        # Process the 'dangerous' array
-        dangerous_segments, flash_count = DangerDetection.process_dangerous(dangerous, frame_rate)
-        print("number of flashes occured is" + str(flash_count))
-        if count % 14 == 0 and len(dangerous_segments) > 0:
-            print(dangerous_segments)
-        count += 1
-        #print(f"Processing window starting at frame {cap.get(cv2.CAP_PROP_POS_FRAMES) - frames_per_half_second}")
+            # Process the 'dangerous' array
+            dangerous_segments = DangerDetection.process_dangerous(dangerous, frame_rate)
+            if count % 14 == 0 and len(dangerous_segments) > 0:
+                print(dangerous_segments)
+            count += 1
+            #print(f"Processing window starting at frame {cap.get(cv2.CAP_PROP_POS_FRAMES) - frames_per_half_second}")
 
 
     cap.release()
