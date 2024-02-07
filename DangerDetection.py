@@ -13,9 +13,10 @@ def process_dangerous(dangerous, frame_rate):
     luminance_threshold = 10
 
     # Initialize luminance tracking and timestamps for each segment
-    previous_luminance = np.zeros((4, 4))
+    luminances = np.zeros((num_frames, 4, 4))
     segment_changes = {(i, j): [] for i in range(4) for j in range(4)}
 
+    # Precalculate all luminance values ahead of time
     for frame_idx in range(num_frames):
         for row in range(4):
             for col in range(4):
@@ -23,12 +24,18 @@ def process_dangerous(dangerous, frame_rate):
                 x1, x2 = col * segment_width, (col + 1) * segment_width
                 segment = dangerous[frame_idx, y1:y2, x1:x2]
                 average_luminance = calculate_average_luminance(segment)
-
-                if abs(average_luminance - previous_luminance[row, col]) > luminance_threshold:
-                    timestamp = frame_idx / frame_rate
-                    segment_changes[(row, col)].append(timestamp)
-
-                previous_luminance[row, col] = average_luminance
+                luminances[frame_idx, row, col] = average_luminance
+    
+    # Detect luminance changes
+    for frame_idx in range(num_frames):
+        for future_frame in range(frame_idx + 1, num_frames):
+            for row in range(4):
+                for col in range(4):
+                    if abs(luminances[frame_idx, row, col] - luminances[future_frame, row, col]) > luminance_threshold:
+                        # skip to next relevant frame
+                        frame_idx = future_frame
+                        timestamp = frame_idx / frame_rate
+                        segment_changes[(row, col)].append(timestamp)
 
     # Merge close timestamps to consider them as a single flashing incident
     for key in segment_changes:
