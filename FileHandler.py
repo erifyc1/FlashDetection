@@ -19,11 +19,14 @@ def filehandler(filename, speed):
     dangerous = np.zeros((frames_per_second, frame_height, frame_width, 3), dtype=np.uint8)
     frame_buffer = deque(maxlen=frames_per_second)
 
+    frame = 0
     while cap.isOpened():
         count = 0
         ret, frame = cap.read()
         if not ret:
-            break
+            print("error")
+            return
+            # break
 
     # Convert from BGR to HLS
     hls_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
