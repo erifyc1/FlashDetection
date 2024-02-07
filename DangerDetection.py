@@ -15,7 +15,6 @@ def process_dangerous(dangerous, frame_rate):
 
     # Initialize luminance tracking and timestamps for each segment
     luminances = np.zeros((num_frames, 4, 4))
-    segment_changes = {(i, j): [] for i in range(4) for j in range(4)}
 
     # Precalculate all luminance values ahead of time
     for frame_idx in range(num_frames):
@@ -35,23 +34,6 @@ def process_dangerous(dangerous, frame_rate):
                     if abs(luminances[frame_idx, row, col] - luminances[future_frame, row, col]) > luminance_threshold:
                         # skip to next relevant frame
                         frame_idx = future_frame
-                        timestamp = frame_idx / frame_rate
-                        segment_changes[(row, col)].append(timestamp)
                         num_flashes[row, col] += 1
-
-    # Merge close timestamps to consider them as a single flashing incident
-    for key in segment_changes:
-        timestamps = segment_changes[key]
-        merged_timestamps = []
-        start = None
-        for t in timestamps:
-            if start is None:
-                start = t
-            elif t - start > num_frames / frame_rate:  # If the gap is larger than the window size
-                merged_timestamps.append((start, t))
-                start = None
-        if start is not None:
-            merged_timestamps.append((start, timestamps[-1]))
-        segment_changes[key] = merged_timestamps
-    print("flash count of highest area is" + str(np.max(num_flashes)))
-    return segment_changes
+    
+    return np.max(num_flashes)
