@@ -10,7 +10,7 @@ def process_dangerous(dangerous, frame_rate):
     height, width = dangerous.shape[1], dangerous.shape[2]
     segment_height = height // 4
     segment_width = width // 4
-    luminance_threshold = 10
+    luminance_threshold = 0.5 * 255
     num_flashes = np.zeros((4, 4))
 
     # Initialize luminance tracking and timestamps for each segment
@@ -24,16 +24,23 @@ def process_dangerous(dangerous, frame_rate):
                 x1, x2 = col * segment_width, (col + 1) * segment_width
                 segment = dangerous[frame_idx, y1:y2, x1:x2]
                 average_luminance = calculate_average_luminance(segment)
+                # if (frame_idx > 8):
+                #   print(average_luminance, row, col)
                 luminances[frame_idx, row, col] = average_luminance
-    
+
     # Detect luminance changes
     for frame_idx in range(num_frames):
         for future_frame in range(frame_idx + 1, num_frames):
             for row in range(4):
                 for col in range(4):
-                    if abs(luminances[frame_idx, row, col] - luminances[future_frame, row, col]) > luminance_threshold:
-                        # skip to next relevant frame
-                        frame_idx = future_frame
+                    if (abs(luminances[frame_idx, row, col] - luminances[future_frame, row, col]) > luminance_threshold) and ((luminances[frame_idx, row, col] < 0.8 * 255) or (luminances[future_frame, row, col] < 0.8 * 255)):
                         num_flashes[row, col] += 1
-    print(np.max(num_flashes))
-    return num_flashes
+                        # skip to next relevant frame
+                        if future_frame < num_frames - 1:
+                            frame_idx = future_frame
+                            future_frame = frame_idx + 1
+                            row = 0
+                            col = 0
+                        else:
+                            return np.max(num_flashes)
+    return np.max(num_flashes)
