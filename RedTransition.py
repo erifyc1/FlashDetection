@@ -1,6 +1,10 @@
 from sortedcontainers import SortedDict
 import numpy as np
 
+# Fix the code to adjust for which came first
+
+
+
 class ChromaticityTree:
   def __init__(self):
     self.ct = SortedDict()
@@ -113,3 +117,30 @@ def saturated_red_detector(dangerous, frame_rate, num_frames, n):
   Call ct_pop() and remove_rp() for each region in the frame leaving buffer.
   Call ct_push() and add_rp() for each region in the frame entering buffer.
   """
+
+test = []
+
+for i in range(16):
+  arr = np.random.rand(4, 4)
+  test.append(arr)
+
+test = np.array(test)
+
+def test_checker(test, max_diff, max_red_percentage):
+    flash_found = False
+
+    for i, frame1 in enumerate(test):
+        for j, frame2 in enumerate(test[i + 1:], start=i + 1):
+            for row in range(4):
+                for col in range(4):
+                    # We have an increase or decrease of at least max_diff
+                    if (frame2[row][col] >= frame1[row][col] + max_diff) or \
+                       (frame2[row][col] <= frame1[row][col] - max_diff):
+                        for k, frame3 in enumerate(test[j + 1:], start=j + 1):
+                            # We have an increase or decrease of at least max_diff
+                            if (frame3[row][col] <= frame2[row][col] - max_diff) or \
+                               (frame3[row][col] >= frame2[row][col] + max_diff):
+                                flash_found = True
+  
+    return flash_found
+
