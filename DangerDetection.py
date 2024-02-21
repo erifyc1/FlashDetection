@@ -10,7 +10,7 @@ def process_dangerous(dangerous, frame_rate):
     num_frames = dangerous.shape[0]
     height, width = dangerous.shape[1], dangerous.shape[2]
     # Get the size of a grid tile (currently magic numbers for params)
-    sections = np.floor(np.sqrt(RegionShape.calc_viewport(15, 22)))
+    sections = np.floor(np.sqrt(RegionShape.calc_viewport((1920,1080), 15, 22)))
     segment_height = height // sections
     segment_width = width // sections
     luminance_threshold = 0.5 * 255
