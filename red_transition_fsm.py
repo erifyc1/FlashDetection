@@ -83,16 +83,6 @@ class ChromaticityTree:
         if self.ct:
             return next(reversed(self.ct))
         raise ValueError("Chromaticity tree has no elements")
-    
-    def merge(self, other):
-        """
-        Merge two chromaticity trees together.
-
-        Args:
-            other(ChromaticityTree): The chromaticity tree we want to merge
-        """
-        for el, freq in other.ct.items():
-            self.ct[el] = self.ct.get(el, 0) + freq
 
 class State:
     """
@@ -179,8 +169,6 @@ class Region:
 
     Attributes:
         buffer (Buffer): The buffer (set of frames) to which this region belongs
-        chromaticity (float): The initial chromaticity value of the region
-        red_percentage (float): The initial R/(R + G + B) value of the region 
         MAX_CHROMATICITY_DIFF (float): The chromaticity value difference in 
         states for there to be an opposing transition
         MAX_RED_PERCENTAGE (float): The red percentage for a state to have a "saturated red"
@@ -207,24 +195,20 @@ class Region:
 
         flash_idx(): Returns the index within the current buffer at which the flash occurs.
     """
-    def __init__(self, buffer, chromaticity, red_percentage):
+    def __init__(self, buffer):
         """
         Initializes a new instance of a Region.
 
         Args:
             buffer (Buffer): The buffer (set of frames) to which this region belongs
-            chromaticity (float): The initial chromaticity value of the region
-            red_percentage (float): The initial R/(R + G + B) value of the region 
         """
         self.buffer = buffer
-        self.chromaticity = chromaticity
-        self.red_percentage = red_percentage
 
         Region.MAX_CHROMATICITY_DIFF = 0.2
         Region.MAX_RED_PERCENTAGE = 0.8
 
         self.states = set()
-        Region.add_start_state(chromaticity, red_percentage, self.buffer.idx, self.states)
+        # Region.add_start_state(chromaticity, red_percentage, self.buffer.idx, self.states)
 
     @staticmethod
     def should_transition(
@@ -309,14 +293,8 @@ class Region:
         """
         changed_state_set = set()
 
-        # This could be our new start state
-        Region.add_start_state(
-            chromaticity,
-            red_percentage,
-            self.buffer.idx,
-            changed_state_set)
-
         for state in self.states:
+            print("Reached\n")
             # We do not want to add states for which the starting frame is no
             # longer in the buffer
             if state.idx == self.buffer.get_last_idx():
@@ -355,6 +333,14 @@ class Region:
                     # a saturated red
                     state_e = State('E', chromaticity, self.buffer.idx)
                     Region.update_or_add_state(state_e, changed_state_set, chromaticity)
+        
+        # This could be our new start state
+        Region.add_start_state(
+            chromaticity,
+            red_percentage,
+            self.buffer.idx,
+            changed_state_set)
+
         print(changed_state_set)
         self.states = changed_state_set
 
@@ -398,10 +384,7 @@ class Buffer:
         self.regions = np.empty((n, n), dtype=object)
         for i in range(n):
             for j in range(n):
-                # TODO: Change this to use the actual values corresponding to
-                # the first frame
-                self.regions[i][j] = Region(
-                    self, np.random.rand(), np.random.rand())
+                self.regions[i][j] = Region(self)
         self.num_frames = num_frames
         self.n = n
 

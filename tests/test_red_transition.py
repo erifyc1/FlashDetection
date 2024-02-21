@@ -25,7 +25,7 @@ test_ctree.pop(3)
 assert test_ctree.min() == 3
 
 
-buffer = Buffer(4,4)
+buffer = Buffer(4, 4)
 
 def generate_random_frame(n):
     chromaticity = np.random.rand(n, n)
@@ -40,6 +40,6 @@ print("Adding Frame 0\n")
 frame1 = generate_random_frame(4)
 buffer.add_frame(frame1)
 
-print("Adding Frame 1\n")
-frame2 = generate_random_frame(4)
-buffer.add_frame(frame2)
+# print("Adding Frame 1\n")
+# frame2 = generate_random_frame(4)
+# buffer.add_frame(frame2)
