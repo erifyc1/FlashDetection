@@ -1,4 +1,7 @@
-from RedTransition import ChromaticityTree
+from red_transition_fsm import ChromaticityTree
+from red_transition_fsm import Region
+from red_transition_fsm import State
+from red_transition_fsm import Buffer
 
 test_ctree = ChromaticityTree()
 test_ctree.push(3)
