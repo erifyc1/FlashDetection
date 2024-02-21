@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import RegionShape
 
 def calculate_average_luminance(segment):
@@ -18,7 +19,7 @@ def process_dangerous(dangerous, frame_rate):
     view_distance = 26*2.54
     # viewport angle (default 10)
     viewport_angle = 10
-    sections = np.floor(np.sqrt(RegionShape.calc_viewport(screen_resolution=screen_resolution, screen_size=screen_size, view_distance=view_distance, viewport_angle=viewport_angle)))
+    sections = int(math.floor(math.sqrt(RegionShape.calc_viewport(screen_resolution=screen_resolution, screen_size=screen_size, view_distance=view_distance, viewport_angle=viewport_angle)[2])))
     segment_height = height // sections
     segment_width = width // sections
     luminance_threshold = 0.5 * 255
