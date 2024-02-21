@@ -10,7 +10,15 @@ def process_dangerous(dangerous, frame_rate):
     num_frames = dangerous.shape[0]
     height, width = dangerous.shape[1], dangerous.shape[2]
     # Get the size of a grid tile (currently magic numbers for params)
-    sections = np.floor(np.sqrt(RegionShape.calc_viewport((1920,1080), 15, 22)))
+    # number of pixels in each dimension on the screen
+    screen_resolution = (1920,1080)
+    # length of screen diagonal (cm)
+    screen_size = 15*2.54
+    # screen view distance (cm)
+    view_distance = 26*2.54
+    # viewport angle (default 10)
+    viewport_angle = 10
+    sections = np.floor(np.sqrt(RegionShape.calc_viewport(screen_resolution=screen_resolution, screen_size=screen_size, view_distance=view_distance, viewport_angle=viewport_angle)))
     segment_height = height // sections
     segment_width = width // sections
     luminance_threshold = 0.5 * 255
