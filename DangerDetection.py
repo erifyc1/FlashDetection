@@ -12,7 +12,7 @@ def process_dangerous(dangerous, frame_rate):
     height, width = dangerous.shape[1], dangerous.shape[2]
     # Get the size of a grid tile (currently magic numbers for params)
     # number of pixels in each dimension on the screen
-    screen_resolution = (1920,1080)
+    screen_resolution = (height,width)
     # length of screen diagonal (cm)
     screen_size = 15*2.54
     # screen view distance (cm)
