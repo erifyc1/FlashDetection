@@ -17,7 +17,6 @@ in the CIE 1976 UCS chromaticity diagram as "chromaticity value."
 import numpy as np
 from sortedcontainers import SortedDict
 
-
 class ChromaticityTree:
     """
     ChromaticityTree allows us to determine the min/max chromaticity for a region.
@@ -138,7 +137,7 @@ class State:
         """
         Returns the hash value of a State.
         """
-        return hash(self.name, self.idx)
+        return hash((self.name, self.idx))
 
     def __eq__(self, other):
         """
@@ -291,6 +290,13 @@ class Region:
         """
         changed_state_set = set()
 
+        # This could be our new start state
+        Region.add_start_state(
+            chromaticity,
+            red_percentage,
+            self.buffer.idx,
+            changed_state_set)
+
         for state in self.states:
             # We do not want to add states for which the starting frame is no
             # longer in the buffer
@@ -299,13 +305,6 @@ class Region:
 
             # We always stay in the current state
             Region.update_or_add_state(state, changed_state_set)
-
-            # This could be our new start state
-            Region.add_start_state(
-                chromaticity,
-                red_percentage,
-                self.buffer.idx,
-                changed_state_set)
 
             if state.name == 'A':
                 if Region.should_transition(
