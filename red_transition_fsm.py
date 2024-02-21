@@ -83,6 +83,16 @@ class ChromaticityTree:
         if self.ct:
             return next(reversed(self.ct))
         raise ValueError("Chromaticity tree has no elements")
+    
+    def merge(self, other):
+        """
+        Merge two chromaticity trees together.
+
+        Args:
+            other(ChromaticityTree): The chromaticity tree we want to merge
+        """
+        for el, freq in other.ct.items():
+            self.ct[el] = self.ct.get(el, 0) + freq
 
 class State:
     """
@@ -150,6 +160,15 @@ class State:
             return False
         return self.name == other.name and self.idx == other.idx
 
+    def __repr__(self):
+        """
+        Creates a string representation of a State
+
+        Returns:
+            state_string (string): String representation of the state object
+        """
+        return f"<State name:{self.name} index:{self.idx}>"
+
 class Region:
     """
     Region represents a smaller area within a frame
@@ -173,7 +192,7 @@ class Region:
         Dictates whether we can transition to the next state in the state machine 
         based on whether there is an opposing transition and/or saturated red.
 
-        update_or_add_state(state, state_set): 
+        update_or_add_state(state, state_set, chromaticity): 
         Adds a state to the set of states if it is not present. 
         If we have already reached this state, then we add its 
         chromaticity value to that state's ChromaticityTree.
@@ -246,7 +265,7 @@ class Region:
         return False
 
     @staticmethod
-    def update_or_add_state(state, state_set):
+    def update_or_add_state(state, state_set, chromaticity):
         """
         Adds a state to the set of states if it is not present. If we have already reached
         this state, then we add its chromaticity value to that state's ChromaticityTree.
@@ -257,7 +276,7 @@ class Region:
         """
         for s in state_set:
             if s == state:
-                s.chromaticity_tree.push(state.chromaticity)
+                s.chromaticity_tree.push(chromaticity)
                 return
         state_set.add(state)
 
@@ -303,8 +322,8 @@ class Region:
             if state.idx == self.buffer.get_last_idx():
                 continue
 
-            # We always stay in the current state
-            Region.update_or_add_state(state, changed_state_set)
+            # We can always stay in the current state
+            Region.update_or_add_state(state, changed_state_set, chromaticity)
 
             if state.name == 'A':
                 if Region.should_transition(
@@ -313,21 +332,21 @@ class Region:
                     # increased/decreased by MAX_CHROMATICITY_DIFF and there is
                     # a saturated red
                     state_c = State('C', chromaticity, self.buffer.idx)
-                    Region.update_or_add_state(state_c, changed_state_set)
+                    Region.update_or_add_state(state_c, changed_state_set, chromaticity)
             elif state.name == 'B':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
                     # We can move to state D if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
                     state_d = State('D', chromaticity, self.buffer.idx)
-                    Region.update_or_add_state(state_d, changed_state_set)
+                    Region.update_or_add_state(state_d, changed_state_set, chromaticity)
             elif state.name == 'C':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
                     # We can move to state E if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
                     state_e = State('E', chromaticity, self.buffer.idx)
-                    Region.update_or_add_state(state_e, changed_state_set)
+                    Region.update_or_add_state(state_e, changed_state_set, chromaticity)
             elif state.name == 'D':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, True):
@@ -335,8 +354,8 @@ class Region:
                     # increased/decreased by MAX_CHROMATICITY_DIFF and there is
                     # a saturated red
                     state_e = State('E', chromaticity, self.buffer.idx)
-                    Region.update_or_add_state(state_e, changed_state_set)
-
+                    Region.update_or_add_state(state_e, changed_state_set, chromaticity)
+        print(changed_state_set)
         self.states = changed_state_set
 
     def flash_idx(self):
@@ -404,8 +423,6 @@ class Buffer:
         Args:
             frame (np.array): An n x n numpy array of tuples of form (chromaticity, red_percentage)
         """
-        self.idx += 1
-
         for i in range(self.n):
             for j in range(self.n):
                 chromaticity, red_percentage = frame[i][j]
@@ -419,3 +436,5 @@ class Buffer:
                         str(j) +
                         " for the buffer starting at " +
                         str(flash_idx))
+
+        self.idx += 1
