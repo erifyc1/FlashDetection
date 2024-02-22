@@ -36,7 +36,11 @@ def generate_random_frame(n):
             frame[i, j] = (chromaticity[i, j], red_percentage[i, j])
     return frame
 
-print("Adding Frame 0\n")
+print("ADDING FRAME 0\n")
+frame0 = generate_random_frame(4)
+buffer.add_frame(frame0)
+
+print("\nADDING FRAME 1\n")
 frame1 = generate_random_frame(4)
 buffer.add_frame(frame1)
 

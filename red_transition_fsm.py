@@ -294,36 +294,29 @@ class Region:
         changed_state_set = set()
 
         for state in self.states:
-            print("Reached\n")
-            # We do not want to add states for which the starting frame is no
-            # longer in the buffer
-            if state.idx == self.buffer.get_last_idx():
-                continue
-
             # We can always stay in the current state
             Region.update_or_add_state(state, changed_state_set, chromaticity)
-
             if state.name == 'A':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, True):
                     # We can move to state C if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF and there is
                     # a saturated red
-                    state_c = State('C', chromaticity, self.buffer.idx)
+                    state_c = State('C', chromaticity, state.idx)
                     Region.update_or_add_state(state_c, changed_state_set, chromaticity)
             elif state.name == 'B':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
                     # We can move to state D if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
-                    state_d = State('D', chromaticity, self.buffer.idx)
+                    state_d = State('D', chromaticity, state.idx)
                     Region.update_or_add_state(state_d, changed_state_set, chromaticity)
             elif state.name == 'C':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
                     # We can move to state E if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
-                    state_e = State('E', chromaticity, self.buffer.idx)
+                    state_e = State('E', chromaticity, state.idx)
                     Region.update_or_add_state(state_e, changed_state_set, chromaticity)
             elif state.name == 'D':
                 if Region.should_transition(
@@ -331,7 +324,7 @@ class Region:
                     # We can move to state E if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF and there is
                     # a saturated red
-                    state_e = State('E', chromaticity, self.buffer.idx)
+                    state_e = State('E', chromaticity, state.idx)
                     Region.update_or_add_state(state_e, changed_state_set, chromaticity)
         
         # This could be our new start state
@@ -388,16 +381,13 @@ class Buffer:
         self.num_frames = num_frames
         self.n = n
 
-    def get_last_idx(self):
+    def remove_frame(self, idx):
         """
-        Get the index at which the previous frame was added
-
-        Returns:
-            idx (int): The index at which the previous frame was added
+        Remove a frame from the buffer.
         """
-        if self.idx == 0:
-            return self.n - 1
-        return (self.idx - 1) % self.n
+        for i in range(self.n):
+            for j in range(self.n):
+                self.regions[i][j].states = {item for item in self.regions[i][j].states if item.idx != idx}
 
     def add_frame(self, frame):
         """
@@ -421,3 +411,9 @@ class Buffer:
                         str(flash_idx))
 
         self.idx += 1
+
+        # Remove the frame leaving from the buffer
+        out_idx = self.idx - self.num_frames
+
+        if (out_idx) >= 0:
+            self.remove_frame(out_idx)
