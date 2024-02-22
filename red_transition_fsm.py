@@ -15,74 +15,49 @@ in the CIE 1976 UCS chromaticity diagram as "chromaticity value."
 """
 
 import numpy as np
-from sortedcontainers import SortedDict
 
-class ChromaticityTree:
+class ChromaticityChecker:
     """
-    ChromaticityTree allows us to determine the min/max chromaticity for a region.
+    ChromaticityChecker allows us to determine whether a chromaticity change exceeds a threshold.
 
     Attributes:
-        ct (SortedDict): Stores the chromaticity values and their frequency
+        ct (list): List of the chromaticity values which arrived at a given state
+        MAX_CHROMATICITY_DIFF (float): The chromaticity value difference in 
+        states for there to be an opposing transition
 
     Methods:
-        push(element): Add chromaticity value to the ChromaticityTree
-        pop(element): Remove chromaticity value from the ChromaticityTree
-        min(): Determine the minimum chromaticity value in the ChromaticityTree
-        max(): Determine the maximum chromaticity value in the ChromaticityTree
+        push(coordinate): Add chromaticity value to the ChromaticityChecker
+        is_above_threshold(other_coord): Determines whether there is a change in chromaticity above the threshold
     """
 
     def __init__(self):
         """
-        Initializes a new instance of a ChromaticityTree.
+        Initializes a new instance of a ChromaticityChecker.
         """
-        self.ct = SortedDict()
+        ChromaticityChecker.MAX_CHROMATICITY_DIFF = 0.2
+        self.coordinates = []
 
-    def push(self, element):
+    def push(self, coordinate):
         """
-        Add a chromaticity value to the ChromaticityTree.
-
-        Args:
-            element(float): The chromaticity value to add to the ChromaticityTree
-        """
-        self.ct[element] = self.ct.get(element, 0) + 1
-
-    def pop(self, element):
-        """
-        Removes a chromaticity value from the ChromaticityTree.
+        Add a chromaticity coordinate to the ChromaticityChecker.
 
         Args:
-            element(float): The chromaticity value to remove from the ChromaticityTree
+            element((float, float)): The (u', v') chromaticity coordinate to add to the ChromaticityChecker
         """
-        num_occurrences = self.ct.get(element, 0)
+        self.coordinates.append(coordinate)
 
-        if num_occurrences == 0:
-            raise ValueError("Element is not in tree")
-        if num_occurrences == 1:
-            del self.ct[element]
-        else:
-            self.ct[element] = num_occurrences - 1
-
-    def min(self):
+    def is_above_threshold(self, other_coord):
         """
-        Determine the minimum chromaticity value in the ChromaticityTree.
+        Determines whether there is a change in chromaticity above a threshold.
 
-        Returns:
-            min(float): the minimum chromaticity value in the ChromaticityTree.
+        Args:
+            other_coord((float, float)): The (u', v') chromaticity coordinate of a region of a frame
         """
-        if self.ct:
-            return next(iter(self.ct))
-        raise ValueError("Chromaticity tree has no elements")
-
-    def max(self):
-        """
-        Determine the maximum chromaticity value in the ChromaticityTree.
-
-        Returns:
-            max(float): maximum chromaticity value in the ChromaticityTree.
-        """
-        if self.ct:
-            return next(reversed(self.ct))
-        raise ValueError("Chromaticity tree has no elements")
+        coordinates_array = np.array(self.coordinates)
+        # The chromaticity difference is calculated as SQRT( (u'1 - u'2)^2 + (v'1 - v'2)^2 )
+        differences = np.linalg.norm(coordinates_array - other_coord, axis=1)
+        # Are any of the changes above the threshold?
+        return np.any(differences >= self.MAX_CHROMATICITY_DIFF)
 
 class State:
     """
@@ -106,16 +81,17 @@ class State:
         Next State: 
         D (default),
         E (if there is a change of MAX_CHROMATICITY_DIFF and we see a saturated red)
-    E: We have seen two opposing transitions involving a saturated red.
+    E: We have seen two opposing transitions involving a saturated red. There is a red flash.
 
     Attributes:
         idx (int): The index at which the possible flash begins
         name (string): 'A', 'B', 'C', 'D', or 'E', indicating our state in the state machine
-        chromaticity_tree (ChromaticityTree): The min/max chromaticity values 
+        chromaticity_checker (ChromaticityChecker): The chromaticity coordinates which allowed us to arrive at this state
         
     Methods:
         __hash__: Returns the hash value of a State
         __eq__: Checks whether two State objects are equal
+        __repr__: Returns the string representation of a state
     """
     def __init__(self, name, chromaticity, idx):
         """
@@ -123,19 +99,22 @@ class State:
 
         Args:
             name (string): 'A', 'B', 'C', 'D', or 'E', indicating our state in the state machine
-            chromaticity (float): The chromaticity value of the current state
+            chromaticity ((u', v')): The chromaticity value of the current state
             idx (int): The index at which the possible flash begins
         """
         if name not in ['A', 'B', 'C', 'D', 'E']:
             raise ValueError("Invalid state name")
         self.idx = idx
         self.name = name
-        self.chromaticity_tree = ChromaticityTree()
-        self.chromaticity_tree.push(chromaticity)
+        self.chromaticity_checker = ChromaticityChecker()
+        self.chromaticity_checker.push(chromaticity)
 
     def __hash__(self):
         """
         Returns the hash value of a State.
+
+        Returns:
+            hash (int): The hash value of a State
         """
         return hash((self.name, self.idx))
 
@@ -169,8 +148,6 @@ class Region:
 
     Attributes:
         buffer (Buffer): The buffer (set of frames) to which this region belongs
-        MAX_CHROMATICITY_DIFF (float): The chromaticity value difference in 
-        states for there to be an opposing transition
         MAX_RED_PERCENTAGE (float): The red percentage for a state to have a "saturated red"
         states (set(State)): The set of states we use in a 
         state machine to determine whether there is a flash
@@ -183,7 +160,7 @@ class Region:
         update_or_add_state(state, state_set, chromaticity): 
         Adds a state to the set of states if it is not present. 
         If we have already reached this state, then we add its 
-        chromaticity value to that state's ChromaticityTree.
+        chromaticity coordinate to that state's ChromaticityChecker.
 
         add_start_state(chromaticity, red_percentage, idx, state_set): 
         Adds a start state to the set of states, 
@@ -204,11 +181,9 @@ class Region:
         """
         self.buffer = buffer
 
-        Region.MAX_CHROMATICITY_DIFF = 0.2
         Region.MAX_RED_PERCENTAGE = 0.8
 
         self.states = set()
-        # Region.add_start_state(chromaticity, red_percentage, self.buffer.idx, self.states)
 
     @staticmethod
     def should_transition(
@@ -222,7 +197,7 @@ class Region:
 
         Args:
             state (State): The current state in the state machine
-            chromaticity (float): The chromaticity of the region in the newly-added frame
+            chromaticity ((float, float)): The chromaticity coordinate of the region in the newly-added frame
             red_percentage (float): The red percentage of the region in the newly-added frame
             should_check_red_percentage (bool): Whether the frame must 
             have a saturated red for us to transition
@@ -238,12 +213,7 @@ class Region:
 
         # If the change in chromaticity exceeds MAX_CHROMATICITY_DIFF,
         # and we have a saturated red if needed, then we can transition
-        if abs(chromaticity - state.chromaticity_tree.max()
-               ) >= Region.MAX_CHROMATICITY_DIFF:
-            return True
-
-        if abs(chromaticity - state.chromaticity_tree.min()
-               ) >= Region.MAX_CHROMATICITY_DIFF:
+        if state.chromaticity_checker.is_above_threshold(chromaticity):
             return True
 
         return False
@@ -252,15 +222,16 @@ class Region:
     def update_or_add_state(state, state_set, chromaticity):
         """
         Adds a state to the set of states if it is not present. If we have already reached
-        this state, then we add its chromaticity value to that state's ChromaticityTree.
+        this state, then we add its chromaticity value to that state's ChromaticityChecker.
 
         Args:
             state (State): The state we want to add to the state machine
             state_set (set(State)): The set of states we are in in the state machine
+            chromaticity ((float, float)): The chromaticity coordinate of the region in the newly-added frame
         """
         for s in state_set:
             if s == state:
-                s.chromaticity_tree.push(chromaticity)
+                s.chromaticity_checker.push(chromaticity)
                 return
         state_set.add(state)
 
@@ -270,7 +241,7 @@ class Region:
         Adds a start state corresponding to the newly-added frame to the state machine.
 
         Args:
-            chromaticity (float): The chromaticity of the region in the newly-added frame
+            chromaticity ((float, float)): The chromaticity coordinate of the region in the newly-added frame
             red_percentage (float): The red percentage of the region in the newly-added frame
             idx (int): The index of the frame at which the flash would begin
             state_set(set(State)): The set of states we are in in the state machine
@@ -288,7 +259,7 @@ class Region:
         and the chromaticity/red percentage of the frame being added.
 
         Args:
-            chromaticity (float): The chromaticity of the region in the newly-added frame
+            chromaticity ((u', v')): The chromaticity coordinate of the region in the newly-added frame
             red_percentage (float): The red_percentage of the region in the newly-added frame
         """
         changed_state_set = set()
@@ -363,6 +334,7 @@ class Buffer:
     Methods:
         get_last_idx(): Get the last index at which a frame was added
         add_frame(frame): Add the chromaticity/red percentage values 
+        remove_frame(self, idx): Remove a frame from the buffer
         for each region in the frame to the Region array
     """
     def __init__(self, num_frames, n):
@@ -399,11 +371,13 @@ class Buffer:
         for i in range(self.n):
             for j in range(self.n):
                 chromaticity, red_percentage = frame[i][j]
+                # Update the states based on the current frame
                 self.regions[i][j].state_machine(chromaticity, red_percentage)
+                # Determine whether we have reached the flash state (E) for this region
                 flash_idx = self.regions[i][j].flash_idx()
                 if flash_idx != -1:
                     print(
-                        "There is a flash at the region located at row " +
+                        "There is a red flash at the region located at row " +
                         str(i) +
                         " and column " +
                         str(j) +
@@ -412,7 +386,7 @@ class Buffer:
 
         self.idx += 1
 
-        # Remove the frame leaving from the buffer
+        # Remove states corresponding to frames which are no longer in the window
         out_idx = self.idx - self.num_frames
 
         if (out_idx) >= 0:
