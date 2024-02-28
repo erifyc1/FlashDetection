@@ -5,6 +5,9 @@ from collections import deque
 import DangerDetection
 
 def filehandler(filename, speed):
+    hertz = 3
+    if speed > 5 or speed < 2e-1:
+      raise ValueError("speed must not exceed 5x and must be positive")
     flash_seconds = 0
     # get file and frame data
     cap = cv2.VideoCapture(filename)
@@ -55,13 +58,13 @@ def filehandler(filename, speed):
                 dangerous[i] = buf_frame
 
             # Process the 'dangerous' array
-            flashes = DangerDetection.process_dangerous(dangerous, frame_rate)
-            if flashes >= 2 and start_danger == -1:
+            flashes = process_dangerous(dangerous, frame_rate)
+            if flashes >= hertz and start_danger == -1:
                 start_danger = frame_counter
-            if flashes < 2:
+            if flashes < hertz:
                 if start_danger >= 0:
-                    timestamps.append((start_danger, frame_counter))
-                    print("danger from", start_danger / frames_per_second, "seconds to", frame_counter / frames_per_second, "seconds, frames", start_danger, frame_counter)
+                    timestamps.append([start_danger / frame_rate, frame_counter / frame_rate])
+                    #print("danger from", start_danger / frames_per_second, "seconds to", frame_counter / frames_per_second, "seconds, frames", start_danger, frame_counter)
                     start_danger = -1
                     #last_danger = frame_counter
                 #skip = frames_per_second
@@ -70,6 +73,20 @@ def filehandler(filename, speed):
             # print("number of flashes occured is" + str(flashes))
             #print(f"Processing window starting at frame {cap.get(cv2.CAP_PROP_POS_FRAMES) - frames_per_half_second}")
         frame_counter += 1
-
-
     cap.release()
+
+    #timestamp merge: Detection of flashes occurs within half-second windows so we want to merge what's close together
+    idx = 0
+    while idx < len(timestamps):
+      stamp = timestamps[idx]
+      if idx + 1 == len(timestamps):
+        break
+      next = timestamps[idx + 1]
+      if abs(stamp[1] - next[0]) < .5:
+        stamp[1] = next[1]
+        timestamps.remove(next)
+      else:
+        idx += 1
+
+    for st in timestamps:
+      print("flashing from", st[0], "to", st[1])

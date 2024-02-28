@@ -19,7 +19,8 @@ def process_dangerous(dangerous, frame_rate):
     view_distance = 26*2.54
     # viewport angle (default 10)
     viewport_angle = 10
-    sections = int(math.floor(math.sqrt(RegionShape.calc_viewport(screen_resolution=screen_resolution, screen_size=screen_size, view_distance=view_distance, viewport_angle=viewport_angle)[2])))
+    square_length = RegionShape.calc_viewport(screen_resolution=screen_resolution, screen_size=screen_size, view_distance=view_distance, viewport_angle=viewport_angle)[2]
+    sections = max(height // square_length, width // square_length) # multiply by zoom
     segment_height = height // sections
     segment_width = width // sections
     luminance_threshold = 0.5 * 255
