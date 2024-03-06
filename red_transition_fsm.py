@@ -330,14 +330,17 @@ class Buffer:
         regions (np.array((n, n), dtype=Region)): Stores the regions within each frame
         num_frames (int): The number of frames in the buffer at a given time
         n (int): Dictates the number of regions (i.e., there are n x n regions in a frame)
+        frame_rate (float): The frame rate
+        red_flash_timestamps (list): The timestamps at which red flashes occur
 
     Methods:
         get_last_idx(): Get the last index at which a frame was added
         add_frame(frame): Add the chromaticity/red percentage values 
         remove_frame(self, idx): Remove a frame from the buffer
         for each region in the frame to the Region array
+        get_red_flash_timestamps(): Get the timestamps at which red flashes occur
     """
-    def __init__(self, num_frames, n):
+    def __init__(self, num_frames, n, frame_rate):
         """
         Initializes a new instance of a Buffer.
 
@@ -352,6 +355,8 @@ class Buffer:
                 self.regions[i][j] = Region(self)
         self.num_frames = num_frames
         self.n = n
+        self.frame_rate = frame_rate
+        self.red_flash_timestamps = []
 
     def remove_frame(self, idx):
         """
@@ -376,13 +381,7 @@ class Buffer:
                 # Determine whether we have reached the flash state (E) for this region
                 flash_idx = self.regions[i][j].flash_idx()
                 if flash_idx != -1:
-                    print(
-                        "There is a red flash at the region located at row " +
-                        str(i) +
-                        " and column " +
-                        str(j) +
-                        " for the buffer starting at " +
-                        str(flash_idx))
+                    self.red_flash_timestamps.append((i / self.frame_rate, j / self.frame_rate))
 
         self.idx += 1
 
@@ -391,3 +390,12 @@ class Buffer:
 
         if (out_idx) >= 0:
             self.remove_frame(out_idx)
+    
+    def get_red_flash_timestamps(self):
+        """
+        Returns the timestamps at which the red flashes occur.
+
+        Returns:
+            red_flash_timestamps (list): The timestamps at which red flashes occur
+        """
+        return self.red_flash_timestamps
