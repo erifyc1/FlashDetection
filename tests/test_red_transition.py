@@ -4,7 +4,7 @@ import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
-from red_transition_fsm import ChromaticityChecker, State, Region, Buffer
+from red_transition_fsm import Buffer
 import numpy as np
 
 # test_ctree = ChromaticityTree()

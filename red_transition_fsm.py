@@ -371,13 +371,13 @@ class Buffer:
         Add a frame to the buffer.
 
         Args:
-            frame (np.array): An n x n numpy array of tuples of form (chromaticity, red_percentage)
+            frame (np.array): An n x n numpy array of lists of form [u, v, red_percentage]
         """
         for i in range(self.n):
             for j in range(self.n):
-                chromaticity, red_percentage = frame[i][j]
+                u, v, red_percentage = frame[i][j]
                 # Update the states based on the current frame
-                self.regions[i][j].state_machine(chromaticity, red_percentage)
+                self.regions[i][j].state_machine((u, v), red_percentage)
                 # Determine whether we have reached the flash state (E) for this region
                 flash_idx = self.regions[i][j].flash_idx()
                 if flash_idx != -1:
