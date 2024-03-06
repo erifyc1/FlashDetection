@@ -305,7 +305,6 @@ class Region:
             self.buffer.idx,
             changed_state_set)
 
-        print(changed_state_set)
         self.states = changed_state_set
 
     def flash_idx(self):
