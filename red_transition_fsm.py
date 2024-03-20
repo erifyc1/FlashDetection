@@ -72,20 +72,16 @@ class State:
     B: Possible start state, if we start at a frame containing a saturated red.
         Next State:
         B (default), 
-        D (if there is a change of MAX_CHROMATICITY_DIFF)
+        C (if there is a change of MAX_CHROMATICITY_DIFF)
     C: We have seen a change of MAX_CHROMATICITY_DIFF and a saturated red.
         Next State: 
         C (default),
-        E (if there is a change of MAX_CHROMATICITY_DIFF)
-    D: We have seen a single opposing transition involving a saturated red.
-        Next State: 
-        D (default),
-        E (if there is a change of MAX_CHROMATICITY_DIFF and we see a saturated red)
-    E: We have seen two opposing transitions involving a saturated red. There is a red flash.
+        D (if there is a change of MAX_CHROMATICITY_DIFF)
+    D: We have seen two opposing transitions involving a saturated red. There is a red flash.
 
     Attributes:
         idx (int): The index at which the possible flash begins
-        name (string): 'A', 'B', 'C', 'D', or 'E', indicating our state in the state machine
+        name (string): 'A', 'B', 'C', or 'D', indicating our state in the state machine
         chromaticity_checker (ChromaticityChecker): The chromaticity coordinates which allowed us to arrive at this state
         
     Methods:
@@ -98,11 +94,11 @@ class State:
         Initializes a new instance of a State.
 
         Args:
-            name (string): 'A', 'B', 'C', 'D', or 'E', indicating our state in the state machine
+            name (string): 'A', 'B', 'C', or 'D', indicating our state in the state machine
             chromaticity ((u', v')): The chromaticity value of the current state
             idx (int): The index at which the possible flash begins
         """
-        if name not in ['A', 'B', 'C', 'D', 'E']:
+        if name not in ['A', 'B', 'C', 'D']:
             raise ValueError("Invalid state name")
         self.idx = idx
         self.name = name
@@ -278,24 +274,16 @@ class Region:
             elif state.name == 'B':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
-                    # We can move to state D if the chromaticity
+                    # We can move to state C if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
-                    state_d = State('D', chromaticity, state.idx)
-                    Region.update_or_add_state(state_d, changed_state_set, chromaticity)
+                    state_c = State('C', chromaticity, state.idx)
+                    Region.update_or_add_state(state_c, changed_state_set, chromaticity)
             elif state.name == 'C':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
                     # We can move to state E if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
-                    state_e = State('E', chromaticity, state.idx)
-                    Region.update_or_add_state(state_e, changed_state_set, chromaticity)
-            elif state.name == 'D':
-                if Region.should_transition(
-                        state, chromaticity, red_percentage, True):
-                    # We can move to state E if the chromaticity
-                    # increased/decreased by MAX_CHROMATICITY_DIFF and there is
-                    # a saturated red
-                    state_e = State('E', chromaticity, state.idx)
+                    state_e = State('D', chromaticity, state.idx)
                     Region.update_or_add_state(state_e, changed_state_set, chromaticity)
         
         # This could be our new start state
@@ -316,7 +304,7 @@ class Region:
             or -1 if there is no flash within the region
         """
         for state in self.states:
-            if state.name == 'E':
+            if state.name == 'D':
                 return state.idx
         return -1
 
