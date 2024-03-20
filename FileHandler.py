@@ -1,9 +1,3 @@
-# Open the video file
-import cv2
-import numpy as np
-from collections import deque
-import DangerDetection
-
 def filehandler(filename, speed):
     hertz = 3
     if speed > 5 or speed < 2e-1:
@@ -22,6 +16,7 @@ def filehandler(filename, speed):
     # sliding window array which accounts for a second of visual data
     dangerous = np.zeros((frames_per_second, frame_height, frame_width, 3), dtype=np.uint8)
     frame_buffer = deque(maxlen=frames_per_second)
+    frame_buffer_red=Buffer(4,4,frame_rate)
 
     # if skipping a second to optimize
     skip = 0
@@ -41,6 +36,31 @@ def filehandler(filename, speed):
         # Convert from BGR to HLS
         hls_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
 
+         # Convert from BGR to RGB
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        tristimulus_matrix = np.array([
+            [0.4124564, 0.3575761, 0.1804375],
+            [0.2126729, 0.7151522, 0.0721750],
+            [0.0193339, 0.1191920, 0.9503041]
+        ])
+        # U = np.zeros(frame_rgb.shape[:2])
+        # V = np.zeros(frame_rgb.shape[:2])
+        # Rperc = np.zeros(frame_rgb.shape[:2])
+        chromacityRerc=np.zeros(frame_rgb.shape[:3], dtype=np.float64)
+        for i in range(frame_rgb.shape[0]):
+            for j in range(frame_rgb.shape[1]):
+                b = np.dot(tristimulus_matrix, frame_rgb[i,j])
+                d = (b[0] + 15 * b[1] + 3 * b[2])
+                u=0 if d == 0 else 4 * b[0] / d
+                v=0 if d == 0 else 9 * b[1] / d
+                cTotal = np.sum(frame_rgb[i,j])
+                rperc = 0 if cTotal == 0 else frame_rgb[i,j,0] / cTotal
+                chromacityRerc[i][j]=[u, v, rperc]
+                #((U,V),Rper)
+
+        #Add the currecnt frame to the buffer for red detection
+        frame_buffer_red.add_frame(chromacityRerc)
+        # print(chromacityRerc)
         # Add the current frame to the buffer
         frame_buffer.append(hls_frame)
 

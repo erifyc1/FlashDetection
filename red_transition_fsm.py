@@ -293,6 +293,10 @@ class Region:
             self.buffer.idx,
             changed_state_set)
 
+<<<<<<< HEAD
+=======
+        # print(changed_state_set)
+>>>>>>> 31f8119 (changed filehandler)
         self.states = changed_state_set
 
     def flash_idx(self):
