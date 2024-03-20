@@ -281,7 +281,7 @@ class Region:
             elif state.name == 'C':
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
-                    # We can move to state E if the chromaticity
+                    # We can move to state D if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
                     state_e = State('D', chromaticity, state.idx)
                     Region.update_or_add_state(state_e, changed_state_set, chromaticity)
