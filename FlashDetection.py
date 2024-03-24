@@ -1,7 +1,6 @@
 import FileHandler
 import sys
-
-FileHandler.filehandler("/Users/dahyun/Documents/Programfile/CS497/CS497_FlashDetection/sample_videos/natural_flash/Generator Explosion and Arc Flash.mp4",1)
+import time
 # def main(file_name):
 #     # Your main logic goes here
 #     try:
@@ -13,7 +12,11 @@ FileHandler.filehandler("/Users/dahyun/Documents/Programfile/CS497/CS497_FlashDe
 #     except Exception as e:
 #         print(f"Error: {e}")
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    t1 = time.time()
+    FileHandler.filehandler("./sample_videos/natural_flash/Generator Explosion and Arc Flash.mp4",1)
+    t2 = time.time()
+    print("runtime: " + str(int(t2-t1)) + " seconds")
 #     if len(sys.argv) != 2:
 #         print("Usage: python FlashDetection.py <file_path>")
 #     else:

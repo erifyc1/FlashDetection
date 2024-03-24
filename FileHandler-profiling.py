@@ -1,4 +1,5 @@
 import cv2
+import time
 import numpy as np
 from collections import deque
 from red_transition_fsm import *
@@ -30,7 +31,7 @@ def filehandler(filename, speed):
     frame_counter = 0
     start_danger = -1
     # last_danger = -1
-
+    profiling = np.array([0.0,0.0,0.0,0.0,0.0,0.0,0.0])
     timestamps = []
 
     while cap.isOpened():
@@ -52,27 +53,32 @@ def filehandler(filename, speed):
             [0.2126729, 0.7151522, 0.0721750],
             [0.0193339, 0.1191920, 0.9503041]
         ])
+        ff_t1 = time.time()
         # Flatten the frame_rgb array
         flat_frame_rgb = frame_rgb.reshape(-1, 3)
 
         # Calculate b values for all pixels
         b = np.dot(flat_frame_rgb, tristimulus_matrix.T)
-
+        ff_t2 = time.time()
+        profiling[0] += ff_t2 - ff_t1
         # Calculate d values for all pixels
         d = b[:, 0] + 15 * b[:, 1] + 3 * b[:, 2]
-
+        ff_t3 = time.time()
+        profiling[1] += ff_t3 - ff_t2
         # Calculate u and v values for all pixels
         d[d == 0.0] = 134217728
         u = 4 * b[:, 0] / d
         v = 9 * b[:, 1] / d
-
+        ff_t4 = time.time()
+        profiling[2] += ff_t4 - ff_t3
         # Calculate cTotal for all pixels
         cTotal = np.sum(frame_rgb, axis=2).reshape(-1)
 
         # Calculate rperc values for all pixels
         cTotal[cTotal == 0.0] = 134217728
         rperc = flat_frame_rgb[:, 0] / cTotal
-
+        ff_t5 = time.time()
+        profiling[3] += ff_t5 - ff_t4
         # Reshape u, v, and rperc to the original shape
         u = u.reshape(frame_rgb.shape[0], frame_rgb.shape[1])
         v = v.reshape(frame_rgb.shape[0], frame_rgb.shape[1])
@@ -80,13 +86,15 @@ def filehandler(filename, speed):
 
         # Combine u, v, and rperc into chromacityRerc
         chromacityRerc = np.stack((u, v, rperc), axis=2)
-
+        ff_t6 = time.time()
+        profiling[4] += ff_t6 - ff_t5
         #Add the currecnt frame to the buffer for red detection
         frame_buffer_red.add_frame(chromacityRerc)
         
         # Add the current frame to the buffer
         frame_buffer.append(hls_frame)
-
+        ff_t7 = time.time()
+        profiling[5] += ff_t7 - ff_t6
         # Skip a second of frames
         # if skip > 0:
         #     skip -= 1
@@ -117,8 +125,10 @@ def filehandler(filename, speed):
             # print("number of flashes occured is" + str(flashes))
             # print(f"Processing window starting at frame {cap.get(cv2.CAP_PROP_POS_FRAMES) - frames_per_half_second}")
         frame_counter += 1
+        ff_t8 = time.time()
+        profiling[6] += ff_t8 - ff_t7
     cap.release()
-
+    print(profiling)
     #timestamp merge: Detection of flashes occurs within half-second windows so we want to merge what's close together
     idx = 0
     while idx < len(timestamps):
