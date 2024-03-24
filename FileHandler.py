@@ -5,6 +5,9 @@ from red_transition_fsm import *
 from DangerDetection import *
 
 def filehandler(filename, speed):
+    # enable skipping for less accurate but faster calculation:
+    skip_enabled = 1
+    
     hertz = 3
     if speed > 5 or speed < 2e-1:
       raise ValueError("speed must not exceed 5x and must be positive")
@@ -88,11 +91,11 @@ def filehandler(filename, speed):
         frame_buffer.append(hls_frame)
 
         # Skip a second of frames
-        # if skip > 0:
-        #     skip -= 1
-        #     frame_buffer.popleft()
-        #     frame_counter += 1
-        #     continue
+#         if skip > 0:
+#             skip -= 1
+#             frame_buffer.popleft()
+#             frame_counter += 1
+#             continue
 
         # Check if we have enough frames for the sliding window
         # print(frame_buffer, frames_per_second)
@@ -107,13 +110,14 @@ def filehandler(filename, speed):
                 start_danger = frame_counter
             if flashes < hertz:
                 if start_danger >= 0:
-                    timestamps.append([start_danger / frame_rate, frame_counter / frame_rate])
+                    timestamps.append([(skip_enabled * 2) + start_danger / frame_rate, frame_counter / frame_rate])
                     #print("danger from", start_danger / frames_per_second, "seconds to", frame_counter / frames_per_second, "seconds, frames", start_danger, frame_counter)
                     start_danger = -1
                     #last_danger = frame_counter
-                #skip = frames_per_second
-            frame_buffer.popleft()
-
+            if skip_enabled and flashes == 0:
+                frame_buffer.clear()
+            else:
+                frame_buffer.popleft()
             # print("number of flashes occured is" + str(flashes))
             # print(f"Processing window starting at frame {cap.get(cv2.CAP_PROP_POS_FRAMES) - frames_per_half_second}")
         frame_counter += 1
@@ -126,7 +130,7 @@ def filehandler(filename, speed):
       if idx + 1 == len(timestamps):
         break
       next = timestamps[idx + 1]
-      if abs(stamp[1] - next[0]) < 1.5:
+      if abs(stamp[1] - next[0]) < 3:
         stamp[1] = next[1]
         timestamps.remove(next)
       else:
