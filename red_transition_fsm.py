@@ -144,30 +144,30 @@ class Region:
     Region represents a smaller area within a frame
     (allowing us to see if some part of a frame is flashing).
 
-    Note that each region can have multiple states, 
+    Note that each region can have multiple states,
     and it can arrive at these states using different sequences of frames.
 
     Attributes:
         buffer (Buffer): The buffer (set of frames) to which this region belongs
         MAX_RED_PERCENTAGE (float): The red percentage for a state to have a "saturated red"
-        states (set(State)): The set of states we use in a 
+        states (set(State)): The set of states we use in a
         state machine to determine whether there is a flash
-    
+
     Methods:
-        should_transition(state, chromaticity, red_percentage, should_check_red_percentage): 
-        Dictates whether we can transition to the next state in the state machine 
+        should_transition(state, chromaticity, red_percentage, should_check_red_percentage):
+        Dictates whether we can transition to the next state in the state machine
         based on whether there is an opposing transition and/or saturated red.
 
-        update_or_add_state(state, state_set, chromaticity): 
-        Adds a state to the set of states if it is not present. 
-        If we have already reached this state, then we add its 
+        update_or_add_state(state, state_set, chromaticity):
+        Adds a state to the set of states if it is not present.
+        If we have already reached this state, then we add its
         chromaticity coordinate to that state's ChromaticityChecker.
 
-        add_start_state(chromaticity, red_percentage, idx, state_set): 
-        Adds a start state to the set of states, 
+        add_start_state(chromaticity, red_percentage, idx, state_set):
+        Adds a start state to the set of states,
         based on whether the starting frame has a saturated red.
 
-        state_machine(chromaticity, red_percentage): Update the set of states, 
+        state_machine(chromaticity, red_percentage): Update the set of states,
         given the current states and the chromaticity
         and the red percentage of the frame being added.
 
@@ -200,11 +200,11 @@ class Region:
             state (State): The current state in the state machine
             chromaticity ((float, float)): The chromaticity coordinate of the region in the newly-added frame
             red_percentage (float): The red percentage of the region in the newly-added frame
-            should_check_red_percentage (bool): Whether the frame must 
+            should_check_red_percentage (bool): Whether the frame must
             have a saturated red for us to transition
-        
+
         Returns:
-            should_transition(bool): Whether or not we can transition to 
+            should_transition(bool): Whether or not we can transition to
             the next state in the state machine
         """
         # If we need a saturated red, but this frame
@@ -214,6 +214,7 @@ class Region:
 
         # If the change in chromaticity exceeds MAX_CHROMATICITY_DIFF,
         # and we have a saturated red if needed, then we can transition
+        # print(chromaticity)
         if state.chromaticity_checker.is_above_threshold(chromaticity):
             return True
 
@@ -266,37 +267,49 @@ class Region:
         changed_state_set = set()
 
         for state in self.states:
+            # We can stay in the same state
+            state.chromaticity_checker.push(chromaticity)
+
             if state.name == 'A':
+                # print("hit here\n")
                 if Region.should_transition(
                         state, chromaticity, red_percentage, True):
                     # We can move to state C if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF and there is
                     # a saturated red
                     state_c = State('C', chromaticity, state.idx)
+                    # print("Reaching C\n")
                     Region.update_or_add_state(state_c, changed_state_set, chromaticity)
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
                     state_d = State('D', chromaticity, state.idx)
+                    # print("Reaching D\n")
                     Region.update_or_add_state(state_d, changed_state_set, chromaticity)
             elif state.name == 'B':
+                # print("hit here\n")
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
                     # We can move to state C if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
                     state_c = State('C', chromaticity, state.idx)
+                    # print("Reaching C\n")
                     Region.update_or_add_state(state_c, changed_state_set, chromaticity)
             elif state.name == 'C':
+                # print("hit here\n")
                 if Region.should_transition(
                         state, chromaticity, red_percentage, False):
                     # We can move to state D if the chromaticity
                     # increased/decreased by MAX_CHROMATICITY_DIFF
                     state_e = State('E', chromaticity, state.idx)
+                    # print("Reaching E\n")
                     Region.update_or_add_state(state_e, changed_state_set, chromaticity)
             elif state.name == 'D':
+                # print("hit here\n")
                 if Region.should_transition(state, chromaticity, red_percentage, True):
                     state_e = State('E', chromaticity, state.idx)
+                    # print("Reaching E\n")
                     Region.update_or_add_state(state_e, changed_state_set, chromaticity)
-        
+
         # This could be our new start state
         Region.add_start_state(
             chromaticity,
@@ -312,7 +325,7 @@ class Region:
         The index in the buffer at which the flash begins.
 
         Returns:
-            idx (int): The index at which the flash begins, 
+            idx (int): The index at which the flash begins,
             or -1 if there is no flash within the region
         """
         for state in self.states:
