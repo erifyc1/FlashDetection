@@ -1,7 +1,7 @@
 import FileHandler
 import sys
 
-FileHandler.filehandler("/Users/dahyun/Documents/Programfile/CS497/CS497_FlashDetection/sample_videos/natural_flash/Generator Explosion and Arc Flash.mp4",1)
+FileHandler.filehandler("/Users/dahyun/Documents/Programfile/CS497/CS497_FlashDetection/sample_videos/natural_flash/Generator Explosion and Arc Flash.mp4",2)
 # def main(file_name):
 #     # Your main logic goes here
 #     try:
