@@ -1,3 +1,19 @@
+# library imports
+import cv2
+import numpy as np
+import os.path
+import sys
+from collections import deque
+import matplotlib.pyplot as plt
+import scipy
+import sys
+import os
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+
+from red_transition_fsm import Buffer
+
 def filehandler(filename, speed):
     hertz = 3
     if speed > 5 or speed < 2e-1:
@@ -70,29 +86,29 @@ def filehandler(filename, speed):
         #     frame_buffer.popleft()
         #     continue
 
-        # Check if we have enough frames for the sliding window
-        # print(frame_buffer, frames_per_second)
-        if len(frame_buffer) == frames_per_second:
-            # Fill the 'dangerous' array with the frames from the buffer
-            for i, buf_frame in enumerate(frame_buffer):
-                dangerous[i] = buf_frame
+        # # Check if we have enough frames for the sliding window
+        # # print(frame_buffer, frames_per_second)
+        # if len(frame_buffer) == frames_per_second:
+        #     # Fill the 'dangerous' array with the frames from the buffer
+        #     for i, buf_frame in enumerate(frame_buffer):
+        #         dangerous[i] = buf_frame
 
-            # Process the 'dangerous' array
-            flashes = process_dangerous(dangerous, frame_rate)
-            if flashes >= hertz and start_danger == -1:
-                start_danger = frame_counter
-            if flashes < hertz:
-                if start_danger >= 0:
-                    timestamps.append([start_danger / frame_rate, frame_counter / frame_rate])
-                    #print("danger from", start_danger / frames_per_second, "seconds to", frame_counter / frames_per_second, "seconds, frames", start_danger, frame_counter)
-                    start_danger = -1
-                    #last_danger = frame_counter
-                #skip = frames_per_second
-            frame_buffer.popleft()
+        #     # Process the 'dangerous' array
+        #     flashes = process_dangerous(dangerous, frame_rate)
+        #     if flashes >= hertz and start_danger == -1:
+        #         start_danger = frame_counter
+        #     if flashes < hertz:
+        #         if start_danger >= 0:
+        #             timestamps.append([start_danger / frame_rate, frame_counter / frame_rate])
+        #             #print("danger from", start_danger / frames_per_second, "seconds to", frame_counter / frames_per_second, "seconds, frames", start_danger, frame_counter)
+        #             start_danger = -1
+        #             #last_danger = frame_counter
+        #         #skip = frames_per_second
+        #     frame_buffer.popleft()
 
             # print("number of flashes occured is" + str(flashes))
             #print(f"Processing window starting at frame {cap.get(cv2.CAP_PROP_POS_FRAMES) - frames_per_half_second}")
-        frame_counter += 1
+        # frame_counter += 1
     cap.release()
 
     #timestamp merge: Detection of flashes occurs within half-second windows so we want to merge what's close together
