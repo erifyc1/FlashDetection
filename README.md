@@ -11,3 +11,6 @@ Research supervised by Prof. Lawrence Angrave
 
 Researchers: 
 Jacob Stolker, Sai Dasari, Keli Akabutu, Maya Nayak, Supia Park, Dahyun Lim
+
+# References
+Understanding success Criterion 2.3.1: Three flashes or below threshold | WAI | W3C. (n.d.). https://www.w3.org/WAI/WCAG21/Understanding/three-flashes-or-below-threshold.html#dfn-flash%22
