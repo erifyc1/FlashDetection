@@ -183,6 +183,9 @@ class Region:
         self.buffer = buffer
 
         Region.MAX_RED_PERCENTAGE = 0.8
+        """
+        Based on (WCAG). 2.3.1 
+        """
 
         self.states = set()
 
