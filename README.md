@@ -11,7 +11,7 @@ https://hackmd.io/-pUNfmiZStC8y82JpLdY6A
 # Contributors
 Research supervised by Prof. Lawrence Angrave
 
-Researchers: 
+Researchers: <br />
 Jacob Stolker, Sai Dasari, Keli Akabutu, Maya Nayak, Supia Park, Dahyun Lim
 
 # References
