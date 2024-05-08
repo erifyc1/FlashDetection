@@ -413,4 +413,5 @@ class Buffer:
         Returns:
             red_flash_timestamps (list): The timestamps at which red flashes occur
         """
+        print("red flash timestamps: ", self.red_flash_timestamps)
         return self.red_flash_timestamps

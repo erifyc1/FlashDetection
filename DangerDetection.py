@@ -37,8 +37,6 @@ def process_dangerous(dangerous, frame_rate):
                 x1, x2 = col * segment_width, (col + 1) * segment_width
                 segment = dangerous[frame_idx, y1:y2, x1:x2]
                 average_luminance = calculate_average_luminance(segment)
-                # if (frame_idx > 8):
-                #   print(average_luminance, row, col)
                 luminances[frame_idx, row, col] = average_luminance
 
     # Detect luminance changes

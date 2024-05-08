@@ -5,13 +5,9 @@ from red_transition_fsm import *
 from DangerDetection import *
 
 def filehandler(filename, speed):
-    # enable skipping for less accurate but faster calculation:
-    skip_enabled = 1
-    
-    hertz = 3
+    hertz = 3 #rate of flashing must not exceed 3 times per second
     if speed > 5 or speed < 2e-1:
-      raise ValueError("speed must not exceed 5x and must be positive")
-    flash_seconds = 0
+      raise ValueError("speed must not exceed 5x and must greater than .1x")
     # get file and frame data
     cap = cv2.VideoCapture(filename)
 
@@ -25,23 +21,23 @@ def filehandler(filename, speed):
 
     # sliding window array which accounts for a second of visual data
     dangerous = np.zeros((frames_per_second, frame_height, frame_width, 3), dtype=np.uint8)
-    frame_buffer = deque(maxlen=frames_per_second)
-    frame_buffer_red=Buffer(4,4,frame_rate)
+    frame_buffer = deque(maxlen = frames_per_second)
+    frame_buffer_red = Buffer(4,4,frame_rate)
 
     # if skipping a second to optimize
-    skip = 0
     frame_counter = 0
     start_danger = -1
-    # last_danger = -1
+
+    
 
     timestamps = []
 
+    big_num = 134217728 #arbitrarily large integer, power of 2 for potential micro-optimization
+
     while cap.isOpened():
         ret, frame = cap.read()
-        if frame_counter % 60 == 0:
-           print(f"progress: {int(100 * frame_counter / frame_count)}%")
         if not ret:
-            print(frame_counter, frame_counter / frames_per_second)
+            print("total duration:", frame_counter / frames_per_second)
             print("done")
             break
 
@@ -65,7 +61,7 @@ def filehandler(filename, speed):
         d = b[:, 0] + 15 * b[:, 1] + 3 * b[:, 2]
 
         # Calculate u and v values for all pixels
-        d[d == 0.0] = 134217728
+        d[d == 0.0] = big_num
         u = 4 * b[:, 0] / d
         v = 9 * b[:, 1] / d
 
@@ -73,7 +69,7 @@ def filehandler(filename, speed):
         cTotal = np.sum(frame_rgb, axis=2).reshape(-1)
 
         # Calculate rperc values for all pixels
-        cTotal[cTotal == 0.0] = 134217728
+        cTotal[cTotal == 0.0] = big_num
         rperc = flat_frame_rgb[:, 0] / cTotal
 
         # Reshape u, v, and rperc to the original shape
@@ -90,47 +86,39 @@ def filehandler(filename, speed):
         # Add the current frame to the buffer
         frame_buffer.append(hls_frame)
 
-        # Skip a second of frames
-#         if skip > 0:
-#             skip -= 1
-#             frame_buffer.popleft()
-#             frame_counter += 1
-#             continue
-
         # Check if we have enough frames for the sliding window
-        # print(frame_buffer, frames_per_second)
         if len(frame_buffer) == frames_per_second:
             # Fill the 'dangerous' array with the frames from the buffer
             for i, buf_frame in enumerate(frame_buffer):
                 dangerous[i] = buf_frame
 
-            # Process the 'dangerous' array
+            # Process the potentially dangerous array
             flashes = process_dangerous(dangerous, frame_rate)
+            #dangerous rate of flashing and not currently within a flashing state
             if flashes >= hertz and start_danger == -1:
                 start_danger = frame_counter
+            #we reach a region in which we don't have many flashes (end of flashing or region with no flashing)
             if flashes < hertz:
-                if start_danger >= 0:
-                    timestamps.append([(skip_enabled * 2) + start_danger / frame_rate, frame_counter / frame_rate])
-                    #print("danger from", start_danger / frames_per_second, "seconds to", frame_counter / frames_per_second, "seconds, frames", start_danger, frame_counter)
-                    start_danger = -1
-                    #last_danger = frame_counter
-            if skip_enabled and flashes == 0:
-                frame_buffer.clear()
-            else:
-                frame_buffer.popleft()
-            # print("number of flashes occured is" + str(flashes))
-            # print(f"Processing window starting at frame {cap.get(cv2.CAP_PROP_POS_FRAMES) - frames_per_half_second}")
+                if start_danger >= 0: #end of flashing, else do nothing if in a region with no flashing
+                    timestamps.append([start_danger / frame_rate, frame_counter / frame_rate])
+                    start_danger = -1 #reset start danger so we know we are looking for a new dangerous window
+            frame_buffer.popleft() #remove first element in buffer, to be filled by next frame in filestream
         frame_counter += 1
     cap.release()
 
-    #timestamp merge: Detection of flashes occurs within half-second windows so we want to merge what's close together
+    if (start_danger >= 0): #if we are still in a state of danger
+       timestamps.append([start_danger / frame_rate, frame_counter / frame_rate])
+
+    #timestamp merge: Detection of flashes occurs within 1-to-2.5-second windows so we want to merge what's "close" together
+    #closeness is a relatively arbitrary determination, 2 seconds chosen
     idx = 0
+    merge_window = 2
     while idx < len(timestamps):
       stamp = timestamps[idx]
       if idx + 1 == len(timestamps):
         break
       next = timestamps[idx + 1]
-      if abs(stamp[1] - next[0]) < 3:
+      if abs(stamp[1] - next[0]) < merge_window:
         stamp[1] = next[1]
         timestamps.remove(next)
       else:
