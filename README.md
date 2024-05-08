@@ -5,5 +5,6 @@ The research looks into the critical issue of photosensitive seizures caused by 
 The research actively contributes to the larger goal of improving the safety and accessibility of online information for persons who are prone to photosensitive seizures by examining and debating these specific factors. The findings will be extremely useful to web developers, educators, and regulators seeking to create all-encompassing digital environments that promote user safety and well-being.
 
 Research supervised by Prof. Lawrence Angrave
+
 Researchers: 
 Jacob Stolker, Sai Dasari, Keli Akabutu, Maya Nayak, Supia Park, Dahyun Lim
